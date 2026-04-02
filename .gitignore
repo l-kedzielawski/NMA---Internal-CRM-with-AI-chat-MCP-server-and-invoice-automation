@@ -1,0 +1,123 @@
+# ================================
+# Root .gitignore for Profit Calculator / CRM
+# ================================
+
+# ================================
+# Environment files (contain secrets - NEVER commit)
+# ================================
+.env
+.env.local
+.env.production
+.env.development
+.env*.local
+*.env
+
+# ================================
+# Dependencies (installed fresh via npm install)
+# ================================
+node_modules/
+*/node_modules/
+
+# ================================
+# Build outputs
+# ================================
+dist/
+build/
+*/dist/
+*/build/
+
+# ================================
+# User uploads and generated files
+# Keep the directory structure but ignore contents
+# ================================
+backend/uploads/
+!backend/uploads/.gitkeep
+uploads/
+!uploads/.gitkeep
+
+# ================================
+# Logs
+# ================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+backend/backend.log
+
+# ================================
+# Database dumps (contain business data - use Railway CLI to import directly)
+# ================================
+database/railway-import.sql
+database/*.sql.gz
+*.sql.bak
+
+# ================================
+# Sensitive business data files
+# NEVER commit customer data, invoices, or business documents
+# ================================
+*.csv
+*.xlsx
+*.xls
+*.docx
+*.doc
+Kopia KLIENCI*
+phase1_*
+oferta_*
+
+# ================================
+# Temporary and test files
+# ================================
+tmp/
+temp/
+pliki test/
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# ================================
+# OS generated files
+# ================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ================================
+# IDE and editor files
+# ================================
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.project
+.classpath
+.settings/
+
+# ================================
+# Package lock files (optional - some teams commit these)
+# Uncomment if you don't want to commit lock files
+# ================================
+# package-lock.json
+# yarn.lock
+
+# ================================
+# Coverage and test reports
+# ================================
+coverage/
+.nyc_output/
+*.lcov
+
+# ================================
+# Cache directories
+# ================================
+.cache/
+.parcel-cache/
+.eslintcache
+.npm/

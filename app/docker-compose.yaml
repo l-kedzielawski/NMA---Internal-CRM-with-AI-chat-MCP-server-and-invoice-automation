@@ -1,0 +1,108 @@
+name: app-crm
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: app-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_polish_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: app-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      JWT_SECRET: ${JWT_SECRET}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD}
+      DISABLE_RATE_LIMIT: ${DISABLE_RATE_LIMIT:-false}
+      ENABLE_DEV_RATE_LIMIT: ${ENABLE_DEV_RATE_LIMIT:-false}
+      LOGIN_RATE_LIMIT_WINDOW_MS: ${LOGIN_RATE_LIMIT_WINDOW_MS:-900000}
+      LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-10}
+      API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS:-60000}
+      API_RATE_LIMIT_MAX: ${API_RATE_LIMIT_MAX:-600}
+      UPLOAD_RATE_LIMIT_WINDOW_MS: ${UPLOAD_RATE_LIMIT_WINDOW_MS:-3600000}
+      UPLOAD_RATE_LIMIT_MAX: ${UPLOAD_RATE_LIMIT_MAX:-60}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemma-2-9b-it:free}
+      OPENROUTER_TIMEOUT_MS: ${OPENROUTER_TIMEOUT_MS:-20000}
+      MCP_OWNER_USER_ID: ${MCP_OWNER_USER_ID:-1}
+      MCP_SERVICE_USERNAME: ${MCP_SERVICE_USERNAME:-mcp_service}
+      MCP_SERVICE_EMAIL: ${MCP_SERVICE_EMAIL:-mcp_service@service.local}
+      MCP_SERVICE_FULL_NAME: ${MCP_SERVICE_FULL_NAME:-MCP Service User}
+    volumes:
+      - backend_uploads:/app/uploads
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_PUBLIC_NETWORK:-traefik-public}
+      - traefik.http.routers.app-api.rule=Host(`${APP_DOMAIN}`) && PathPrefix(`/api`)
+      - traefik.http.routers.app-api.entrypoints=websecure
+      - traefik.http.routers.app-api.tls=true
+      - traefik.http.routers.app-api.tls.certresolver=${TRAEFIK_CERTRESOLVER:-myresolver}
+      - traefik.http.routers.app-api.priority=100
+      - traefik.http.services.app-api.loadbalancer.server.port=3001
+    networks:
+      - internal
+      - edge
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: app-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_PUBLIC_NETWORK:-traefik-public}
+      - traefik.http.routers.app.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.app.entrypoints=websecure
+      - traefik.http.routers.app.tls=true
+      - traefik.http.routers.app.tls.certresolver=${TRAEFIK_CERTRESOLVER:-myresolver}
+      - traefik.http.routers.app.priority=1
+      - traefik.http.services.app.loadbalancer.server.port=80
+    networks:
+      - internal
+      - edge
+
+networks:
+  internal:
+    driver: bridge
+  edge:
+    external: true
+    name: ${TRAEFIK_PUBLIC_NETWORK:-traefik-public}
+
+volumes:
+  mysql_data:
+  backend_uploads:
