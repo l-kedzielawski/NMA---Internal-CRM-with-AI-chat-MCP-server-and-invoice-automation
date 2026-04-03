@@ -247,6 +247,4 @@ MIT
 ## Contact
 
 - Name: Lukasz Kedzielawski
-- Email: lukasz@kedzielawski.com
-- Website: [kedzielawski.com](https://kedzielawski.com)
-
+- Email: l.kedzielawski@gmail.com
